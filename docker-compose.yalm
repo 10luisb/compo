@@ -1,0 +1,58 @@
+version: '3.2'
+services:
+  database:
+      image: mongo:4.4
+      container_name: mongo_container
+      restart: always
+      volumes:
+        - ./data:/data/db
+      ports:
+        - '27017:27017'
+  modulos:
+    image: cahernao/backjunio2023
+    container_name: modulo_container
+    privileged: true
+    volumes:
+      - type: bind
+        source: /proc
+        target: /proc
+    pid: host
+    restart: always
+    environment:
+      - DB_HOST=database
+    ports:
+      - '8000:8000'
+    depends_on:
+      - database
+    links:
+      - database
+  api:
+     image: cahernao/apijunio2023
+     container_name: api_node
+     environment:
+       - DB_HOST=database
+     ports:
+       - '3200:3200'
+     networks:
+       - app_network
+     restart: always
+     depends_on:
+       - modulos
+     links:
+       - modulos
+  front:
+     image: cahernao/frontjunio2023
+     container_name: front_container
+     environment:
+       - HOST_API=api
+     ports:
+     - '3000:3000'
+     networks:
+     - app_network
+     restart: always
+     depends_on:
+       - api
+     links:
+       - api
+  networks:
+     app_network:
